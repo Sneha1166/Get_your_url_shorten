@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern URL Shortener</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>;
+
+    <div class="container">
+        <h1>URL Shortener</h1>
+        
+        <form id="shortener-form">
+            <div class="input-group">
+                <label for="full-url">Enter URL:</label>
+                <input type="url" id="full-url" name="full-url" placeholder="https://example.com/very-long-link" required>
+            </div>
+
+            <div class="input-group">
+                <label for="custom-url">Custom Short URL (Optional):</label>
+                <input type="text" id="custom-url" name="custom-url" placeholder="e.g., my-awesome-link">
+            </div>
+
+            <button type="submit" class="btn-shorten">Shorten</button>
+        </form>
+
+      <div class="results-section">
+    
+        <h2>Recent Links</h2>
+    
+        <div id="url-list-container" class="url-list">
+        
+        </div>
+             </div>
+
+
+        </div>
+    </div>
+
+    <script>
+const fetchShortenedURL = async () => {
+    const response = await fetch("/links");
+    const links = await response.json();
+    
+    const container = document.getElementById("url-list-container");
+    container.innerHTML = "";
+
+    // Reverse entries if you want the newest at the top
+    Object.entries(links).reverse().forEach(([shortCode, url]) => {
+        const fullShortUrl = `${window.location.origin}/${shortCode}`;
+        const truncatedURL = url.length >= 40 ? `${url.slice(0, 40)}...` : url;
+
+        const card = document.createElement('div');
+        card.className = 'url-card';
+        card.innerHTML = `
+            <div class="url-info">
+                <a href="/${shortCode}" target="_blank" class="short-link">${fullShortUrl}</a>
+                <p class="original-link" title="${url}">${truncatedURL}</p>
+            </div>
+            <button class="btn-copy" onclick="copyToClipboard('${fullShortUrl}', this)">Copy</button>
+        `;
+        container.appendChild(card);
+    });
+}
+
+
+
+// Handy helper function for the copy button
+function copyToClipboard(text, btn) {
+    navigator.clipboard.writeText(text);
+    const originalText = btn.innerText;
+    btn.innerText = "Copied!";
+    btn.classList.add('copied');
+    setTimeout(() => {
+        btn.innerText = originalText;
+        btn.classList.remove('copied');
+    }, 2000);
+}
+        document.getElementById("shortener-form").addEventListener("submit", async (event)=> {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const url = formData.get('full-url');
+            const shortCode = formData.get('custom-url');
+
+            console.log(url,shortCode);
+
+            try {
+               const response =  await fetch("/shorten",{
+                method : "POST",
+                headers : {'Content-type': 'application/json'},
+                body : JSON.stringify({url,shortCode})
+               });
+
+               if(response.ok){
+                fetchShortenedURL();
+                alert("form submitted successfully");
+                event.target.reset();
+               }
+
+            } catch (error) {
+                const errorMessage = await response.text();
+                console.log(errorMessage);
+                
+            }
+            
+        })
+
+        fetchShortenedURL();
+
+    </script>
+
+</body>
+</html>
